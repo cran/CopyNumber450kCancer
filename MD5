@@ -1,0 +1,13 @@
+0d447d187151e6ccd026351f0f049b8f *DESCRIPTION
+d6cd7b9fdf761b12b21cb56595d1d8e3 *NAMESPACE
+c2b762969b21ab3daef7c8da0ec8a295 *R/CopyNumber450kCancer.R
+69cd20d97bc4d6a85e398ae5260fa635 *inst/extdata/regions.csv
+9f0d3caacc8210be80c9223f2fd0c65c *inst/extdata/sample_list.csv
+377a36f304bc6f3e6273ca5d0c0fef76 *man/AutoCorrectPeak.Rd
+5e5dc41a58bab63cf85751420c14cab2 *man/CopyNumber450kCancer-package.Rd
+c9cad06840723fe039d183276d0f40c0 *man/PlotCNV.Rd
+cf9b04a8a47bff3beefb80c4971b70a1 *man/PlotMerged.Rd
+c46ad589ad1f1a8173d9aa3abf91f318 *man/ReadData.Rd
+44ca28c63a239a2708f7c2958c37a430 *man/ReviewPlot.Rd
+caf18ec7ca96b26989eba2d71864faca *man/plotRegions.Rd
+4880fa66dc91cd64f0b5f4a615304576 *man/print.CopyNumber450kCancer_data.Rd
