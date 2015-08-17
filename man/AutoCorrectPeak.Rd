@@ -1,40 +1,39 @@
 \name{AutoCorrectPeak}
 \alias{AutoCorrectPeak}
-%- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-%%  ~~function to do ... ~~
 This Function is the Main Function in CopyNumber450kCancer Package Which Correct the Baseline Based on the Density of the Probes/Segments
 }
 \description{
-%%  ~~ A concise (1-5 lines) description of what the function does. ~~
+This function generate:\cr
+1) a new segmentation file which is similar to the segmentation input but with the new log values, \cr
+2) plots show the samples before and after the baseline correction, \cr
+3) a QC file, \cr
+4) a file contains the shifting amounts for each sample\cr
 
-This function generate:
-1) a new segmentation file which is similar to the segmentation input but with the new log values, 
-2) plots show the samples before and after the baseline correction, 
-3) a QC file, 
-4) a file contains the shifting amounts for each sample
+QC:\cr
+There are no well-defined quality control (QC) standards for 450k data segmentation; therefore we selected different quality control standards those already used with the SNP arrays. QC file will be produced with these QC standards for each sample: \cr
+1- Interquartile Range (IQR), \cr
+2- Median Absolute Pairwise Difference (MAPD), \cr
+3- number of the segments, \cr
+4- standard deviation (SD), \cr
+5- in the addition of a suggested QC standard named Maximum Density Peak Sharpness (MDPS). \cr
 
-QC:
-There are no well-defined quality control (QC) standards for 450k data segmentation; therefore we selected different quality control standards those already used with the SNP arrays. QC file will be produced with these QC standards for each sample: Interquartile Range (IQR), Median Absolute Pairwise Difference (MAPD), and number of the segments, standard deviation (SD), and in the addition of a suggested QC standard named Maximum Density Peak Sharpness (MDPS). The QC values are calculated based on the log values of the segments but not the probes. BaCo450k does not provide any QC thresholds because they are different from an experiment to another. The user can check the QC file and exclude the samples those have low quality QC values. We strongly recommend the visual reviewing for the segmentation plots as to recognize the low-quality samples.
+The QC values are calculated based on the log values of the segments but not the probes. CopyNumber450kCancer does not provide any QC thresholds because they are different from an experiment to another. The user can check the QC file and exclude the samples those have low quality QC values. We strongly recommend the visual reviewing for the segmentation plots as to recognize the low-quality samples.
 }
 \usage{
 AutoCorrectPeak(object, cutoff = 0.1, markers = 20, ...)
 }
-%- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{object}{
     Data object, as returned by \code{\link{ReadData}}.
   }
   \item{cutoff}{
-    %%     ~~Describe \code{cutoff} here~~
     The cutoff to be used in the ploting, the data or the new segments file will not be affected (default: 0.1)
   }
   \item{markers}{
-    %%     ~~Describe \code{markers} here~~
     The minimum number of the probes required in the segment to be plotted (default: 20)
   }
   \item{\dots}{
-    %%     ~~Describe \code{\dots} here~~
     Sent to \code{\link{plotRegions}}.
   }
 }

@@ -1,6 +1,6 @@
 
 #Function to read the data------
-ReadData<-function(regions_file, Sample_list,copynumber450k=F){
+ReadData<-function(regions_file, Sample_list,copynumber450k=FALSE){
 
   #Functions for checking the headers:::
   #this function to check the header of the input file: ("Sample" "Chromosome" "bp.Start"  "bp.End" "Num.of.Markers" "Mean")
@@ -29,18 +29,18 @@ ReadData<-function(regions_file, Sample_list,copynumber450k=F){
   }
 
   if(is.character(regions_file)){
-    regions<-read.csv(regions_file,stringsAsFactors =F)   #load the file that contains regions and means
+    regions<-read.csv(regions_file,stringsAsFactors =FALSE)   #load the file that contains regions and means
   } else {
     regions <- regions_file
   }
-  if (copynumber450k==T){
+  if (copynumber450k==TRUE){
     regions<-regions[,c("Sample","chrom","loc.start","loc.end","num.mark","seg.mean")]
     colnames(regions)<-c("Sample","Chromosome","bp.Start","bp.End","Num.of.Markers","Mean")
   }
   
   
   if(is.character(regions_file)){
-    SL<-read.csv(Sample_list,stringsAsFactors =F)         #load the file that contains the names of samples and the comments
+    SL<-read.csv(Sample_list,stringsAsFactors =FALSE)         #load the file that contains the names of samples and the comments
   } else {
     SL <- Sample_list
   }
@@ -58,7 +58,7 @@ ReadData<-function(regions_file, Sample_list,copynumber450k=F){
     SL = SL)
   class(object) <- "CopyNumber450kCancer_data"
 
-  mod<-as.data.frame(SL$Sample,stringsAsFactors =F)  # copy to store the modification in it
+  mod<-as.data.frame(SL$Sample,stringsAsFactors =FALSE)  # copy to store the modification in it
   mod[,2:6]<-0
   mod[,6]<-"No"
   mod[is.na(mod)] <- 0
@@ -210,7 +210,6 @@ AutoCorrectPeak<-function(object, cutoff=0.1,markers=20, ...){
   #prepare the QC file
   QC<-object$SL[,1:2]
   QC[,3:7]<-0
-  #QC[,5]<-NA
   colnames(QC) <- c("Sample","Comment","peak.sharpness","number.of.regions","IQR","SD","MAPD")
   
   
@@ -225,7 +224,7 @@ AutoCorrectPeak<-function(object, cutoff=0.1,markers=20, ...){
     
     sam.original<-sam
     
-    d<-density(forDen$Mean,weights=forDen$Num.of.Markers/sum(forDen$Num.of.Markers),na.rm=T,kernel = c("gaussian"),adjust=0.15,n=512)
+    d<-density(forDen$Mean,weights=forDen$Num.of.Markers/sum(forDen$Num.of.Markers),na.rm=TRUE,kernel = c("gaussian"),adjust=0.15,n=512)
     max.peak.value<-d$x[which.max(d$y)]
     sam$Mean <- sam$Mean-max.peak.value
     
@@ -235,9 +234,9 @@ AutoCorrectPeak<-function(object, cutoff=0.1,markers=20, ...){
     QC[i,"peak.sharpness"] <- as.numeric(QC.peak.sharpness)
     QC[i,"number.of.regions"]  <- length(sam[,1]) # for number of the regions
     
-    QC[i,"IQR"]<-IQR(forDen[,"Mean"], na.rm = T, type = 7) #for IQR
-    QC[i,"SD"]<-sd(forDen[,"Mean"], na.rm = T) #for SD
-    QC[i,"MAPD"]<- median(abs(diff(forDen[,"Mean"],na.rm = T)), na.rm = T)# for Median Absolute Pairwise Difference (MAPD)
+    QC[i,"IQR"]<-IQR(forDen[,"Mean"], na.rm = TRUE, type = 7) #for IQR
+    QC[i,"SD"]<-sd(forDen[,"Mean"], na.rm = TRUE) #for SD
+    QC[i,"MAPD"]<- median(abs(diff(forDen[,"Mean"],na.rm = TRUE)), na.rm = TRUE)# for Median Absolute Pairwise Difference (MAPD)
     
     object$regions_auto[which(object$regions_auto$Sample %in% as.character(object$SL[i,"Sample"])),"Mean"]<-sam$Mean #store the modifications
     object$mod_auto[which(object$mod_auto$Sample %in% as.character(object$SL[i,"Sample"])),2:4]<-c(round(max.peak.value, 3),round(-max.peak.value, 3),"Auto") #store the modifications
@@ -270,20 +269,21 @@ AutoCorrectPeak<-function(object, cutoff=0.1,markers=20, ...){
   }
   
   setwd(file.path(object$mainDir))
-  #assign("regions_auto",object$regions_auto, envir = .GlobalEnv)
-  #assign("mod_auto",object$mod_auto, envir = .GlobalEnv)
-  #assign("regions",object$regions_auto, envir = .GlobalEnv)
   object$QC <- QC
   
+  #added for the new version
+  object$regions<-object$regions_auto
   
   print("Saving the file of the autocorrection files...")
   write.csv(object$regions_auto,file="autocorrected_regions.csv")
   write.csv(object$mod_auto,file="autocorrections.csv")
-  write.csv(QC,file="QC.csv",row.names = F)
+  write.csv(QC,file="QC.csv",row.names = FALSE)
   
   print("Auto Correction Done.")
   object
 }
+
+
 #AutoCorrectPeak()
 #----------------------------------------------------------------
 #----------------------------------------------------------------
@@ -296,7 +296,7 @@ AutoCorrectPeak<-function(object, cutoff=0.1,markers=20, ...){
 #saving the reviewing results and the modifications and the plots #this only after the reviewing
 # to run it saveOutput() or saveOutput(plots) to save with plots
 # ReviewPlot()
-ReviewPlot<-function(object, select,plots=T,cutoff=0.1,markers=20,...){
+ReviewPlot<-function(object, select,plots=TRUE,cutoff=0.1,markers=20,...){
  
   setwd(file.path(object$mainDir)) 
   
@@ -334,7 +334,7 @@ ReviewPlot<-function(object, select,plots=T,cutoff=0.1,markers=20,...){
     layout(matrix(c(1,2,3,4),2,2,byrow=TRUE), widths=c(3,21), heights=c(10,10), TRUE) 
     
     forDen<-sam[which(sam$Chromosome!="chrX" & sam$Chromosome!="chrY"),c("Num.of.Markers","Mean")]
-    d<-density(forDen$Mean,weights=forDen$Num.of.Markers/sum(forDen$Num.of.Markers),na.rm=T,kernel = c("gaussian"),adjust=0.15,n=512)
+    d<-density(forDen$Mean,weights=forDen$Num.of.Markers/sum(forDen$Num.of.Markers),na.rm=TRUE,kernel = c("gaussian"),adjust=0.15,n=512)
     plot(d$y,d$x,ylim=c(-1,1),type='l',ylab="",xlab="",axes=FALSE,xlim=rev(range(d$y)))
     abline(h = c(0,-cutoff,cutoff), lty = 3)
     box()
@@ -437,10 +437,10 @@ ReviewPlot<-function(object, select,plots=T,cutoff=0.1,markers=20,...){
     #the 3rd click
     click3 <- locator(n = 1, type = "n")
     
-    while ((click3$x > A & click3$x < B & click3$y > (Y1) & click3$y < (Y2)) == F & 
-             (click3$x > A2 & click3$x < B2 & click3$y > (Y1) & click3$y < (Y2)) == F & 
-             (click3$x > A3 & click3$x < B3 & click3$y > (Y1) & click3$y < (Y2)) == F & 
-             (click3$x > A4 & click3$x < B4 & click3$y > (Y1) & click3$y < (Y2)) == F) {
+    while ((click3$x > A & click3$x < B & click3$y > (Y1) & click3$y < (Y2)) == FALSE & 
+             (click3$x > A2 & click3$x < B2 & click3$y > (Y1) & click3$y < (Y2)) == FALSE & 
+             (click3$x > A3 & click3$x < B3 & click3$y > (Y1) & click3$y < (Y2)) == FALSE & 
+             (click3$x > A4 & click3$x < B4 & click3$y > (Y1) & click3$y < (Y2)) == FALSE) {
       click3 <- locator(n = 1, type = "n")
     }
     
@@ -477,7 +477,7 @@ ReviewPlot<-function(object, select,plots=T,cutoff=0.1,markers=20,...){
       
       #plot the modified plot
       forDen<-sam[which(sam$Chromosome!="chrX" & sam$Chromosome!="chrY"),c("Num.of.Markers","Mean")]
-      d<-density(forDen$Mean,weights=forDen$Num.of.Markers/sum(forDen$Num.of.Markers),na.rm=T,kernel = c("gaussian"),adjust=0.15,n=512)
+      d<-density(forDen$Mean,weights=forDen$Num.of.Markers/sum(forDen$Num.of.Markers),na.rm=TRUE,kernel = c("gaussian"),adjust=0.15,n=512)
       plot(d$y,d$x,ylim=c(-1,1),type='l',ylab="",xlab="",axes=FALSE,xlim=rev(range(d$y)))
       abline(h = c(0,-cutoff,cutoff), lty = 3)
       box()
@@ -497,7 +497,7 @@ ReviewPlot<-function(object, select,plots=T,cutoff=0.1,markers=20,...){
       
       click<-locator(n = 1,type = "l")
       
-      while ((click$x>A&click$x<B&click$y>(Y1)&click$y<(Y2))==F & (click$x>A2&click$x<B2&click$y>(Y1)&click$y<(Y2))==F){
+      while ((click$x>A&click$x<B&click$y>(Y1)&click$y<(Y2))==FALSE & (click$x>A2&click$x<B2&click$y>(Y1)&click$y<(Y2))==FALSE){
         click<-locator(n = 1,type = "l")
       }   
       if((click$x>A&click$x<B&click$y>(Y1)&click$y<(Y2))){ #save
@@ -506,10 +506,7 @@ ReviewPlot<-function(object, select,plots=T,cutoff=0.1,markers=20,...){
         object$regions[which(object$regions$Sample %in% as.character(name)),"Mean"]<<-sam$Mean
         object$mod[which(object$mod$Sample %in% as.character(name)),2:6]<<-c(round(up[1], 3),round(up[2], 3),round(move, 4),round(-move, 4),"Yes_using_median")
         
-        #assign("regions",object$regions, envir = .GlobalEnv)
-        #assign("mod",object$mod, envir = .GlobalEnv)
-        
-        if(plots==T){
+        if(plots==TRUE){
           
           print(paste("Saving the plot for ...",name))
           
@@ -524,7 +521,7 @@ ReviewPlot<-function(object, select,plots=T,cutoff=0.1,markers=20,...){
           #original plots
           sam.original <- object$regions_save[which(object$regions_save$Sample %in% as.character(name)),]
           forDen<-sam.original[which(sam.original$Chromosome!="chrX" & sam.original$Chromosome!="chrY"),c("Num.of.Markers","Mean")]
-          d<-density(forDen$Mean,weights=forDen$Num.of.Markers/sum(forDen$Num.of.Markers),na.rm=T,kernel = c("gaussian"),adjust=0.20,n=1024)
+          d<-density(forDen$Mean,weights=forDen$Num.of.Markers/sum(forDen$Num.of.Markers),na.rm=TRUE,kernel = c("gaussian"),adjust=0.20,n=1024)
           
           plot(d$y,d$x,ylim=c(-1,1),type='l',ylab="",xlab="",axes=FALSE,xlim=rev(range(d$y)))
           abline(h = c(0,-cutoff,cutoff), lty = 3)
@@ -535,7 +532,7 @@ ReviewPlot<-function(object, select,plots=T,cutoff=0.1,markers=20,...){
           #the reviewed plots
           draw <- object$regions[which(object$regions$Sample %in% as.character(name)),] 
           forDen<-draw[which(draw$Chromosome!="chrX" & draw$Chromosome!="chrY"),c("Num.of.Markers","Mean")]
-          d<-density(forDen$Mean,weights=forDen$Num.of.Markers/sum(forDen$Num.of.Markers),na.rm=T,kernel = c("gaussian"),adjust=0.20,n=1024)
+          d<-density(forDen$Mean,weights=forDen$Num.of.Markers/sum(forDen$Num.of.Markers),na.rm=TRUE,kernel = c("gaussian"),adjust=0.20,n=1024)
           
           plot(d$y,d$x,ylim=c(-1,1),type='l',ylab="",xlab="",axes=FALSE,xlim=rev(range(d$y)))
           abline(h = c(0,-cutoff,cutoff), lty = 3)
@@ -569,7 +566,7 @@ ReviewPlot<-function(object, select,plots=T,cutoff=0.1,markers=20,...){
       
       #plot the modified plot
       forDen<-sam[which(sam$Chromosome!="chrX" & sam$Chromosome!="chrY"),c("Num.of.Markers","Mean")]
-      d<-density(forDen$Mean,weights=forDen$Num.of.Markers/sum(forDen$Num.of.Markers),na.rm=T,kernel = c("gaussian"),adjust=0.15,n=512)
+      d<-density(forDen$Mean,weights=forDen$Num.of.Markers/sum(forDen$Num.of.Markers),na.rm=TRUE,kernel = c("gaussian"),adjust=0.15,n=512)
       plot(d$y,d$x,type='l',ylim=c(-1,1),ylab="",xlab="",axes=FALSE,xlim=rev(range(d$y)))
       abline(h = c(0,-cutoff,cutoff), lty = 3)
       box()
@@ -588,7 +585,7 @@ ReviewPlot<-function(object, select,plots=T,cutoff=0.1,markers=20,...){
       text(((A2+B2)/2),((Y1+Y2)/2),labels=paste("modify"),cex=0.75)
       
       click<-locator(n = 1,type = "l")
-      while ((click$x>A&click$x<B&click$y>(Y1)&click$y<(Y2))==F & (click$x>A2&click$x<B2&click$y>(Y1)&click$y<(Y2))==F){
+      while ((click$x>A&click$x<B&click$y>(Y1)&click$y<(Y2))==FALSE & (click$x>A2&click$x<B2&click$y>(Y1)&click$y<(Y2))==FALSE){
         click<-locator(n = 1,type = "l")
       }   
       if((click$x>A&click$x<B&click$y>(Y1)&click$y<(Y2))){ #save
@@ -597,10 +594,7 @@ ReviewPlot<-function(object, select,plots=T,cutoff=0.1,markers=20,...){
         object$regions[which(object$regions$Sample %in% as.character(name)),"Mean"]<<-sam$Mean
         object$mod[which(object$mod$Sample %in% as.character(name)),2:6]<<-c(round(up[1], 3),round(up[2], 3),round(max.peak.value, 4),round(-max.peak.value, 4),"Yes_using_peak")
         
-        #assign("regions",object$regions, envir = .GlobalEnv)
-        #assign("mod",object$mod, envir = .GlobalEnv)
-        
-        if(plots==T){
+        if(plots==TRUE){
           
           print(paste("Saving the plot for ...",name))
           
@@ -615,7 +609,7 @@ ReviewPlot<-function(object, select,plots=T,cutoff=0.1,markers=20,...){
           #original plots
           sam.original <- object$regions_save[which(object$regions_save$Sample %in% as.character(name)),]
           forDen<-sam.original[which(sam.original$Chromosome!="chrX" & sam.original$Chromosome!="chrY"),c("Num.of.Markers","Mean")]
-          d<-density(forDen$Mean,weights=forDen$Num.of.Markers/sum(forDen$Num.of.Markers),na.rm=T,kernel = c("gaussian"),adjust=0.20,n=1024)
+          d<-density(forDen$Mean,weights=forDen$Num.of.Markers/sum(forDen$Num.of.Markers),na.rm=TRUE,kernel = c("gaussian"),adjust=0.20,n=1024)
           
           plot(d$y,d$x,ylim=c(-1,1),type='l',ylab="",xlab="",axes=FALSE,xlim=rev(range(d$y)))
           abline(h = c(0,-cutoff,cutoff), lty = 3)
@@ -626,7 +620,7 @@ ReviewPlot<-function(object, select,plots=T,cutoff=0.1,markers=20,...){
           #the reviewed plots
           draw <- object$regions[which(object$regions$Sample %in% as.character(name)),] 
           forDen<-draw[which(draw$Chromosome!="chrX" & draw$Chromosome!="chrY"),c("Num.of.Markers","Mean")]
-          d<-density(forDen$Mean,weights=forDen$Num.of.Markers/sum(forDen$Num.of.Markers),na.rm=T,kernel = c("gaussian"),adjust=0.20,n=1024)
+          d<-density(forDen$Mean,weights=forDen$Num.of.Markers/sum(forDen$Num.of.Markers),na.rm=TRUE,kernel = c("gaussian"),adjust=0.20,n=1024)
           
           plot(d$y,d$x,ylim=c(-1,1),type='l',ylab="",xlab="",axes=FALSE,xlim=rev(range(d$y)))
           abline(h = c(0,-cutoff,cutoff), lty = 3)
@@ -680,7 +674,7 @@ ReviewPlot<-function(object, select,plots=T,cutoff=0.1,markers=20,...){
 #-  ------------------------------------------------------
 #----------------------------------------------------------------
 #This function to plot only oone plot per page
-PlotCNV<- function(object, select,comment=F,cutoff=0.1,markers=20){
+PlotCNV<- function(object, select,comment=FALSE,cutoff=0.1,markers=20){
   
   if (missing(select)) {
     select<-c(1:length(object$SL[,"Sample"]))
@@ -702,7 +696,7 @@ PlotCNV<- function(object, select,comment=F,cutoff=0.1,markers=20){
     #the density
     draw <- object$regions[which(object$regions$Sample %in% object$SL[select[i],"Sample"]),] 
     forDen<-draw[which(draw$Chromosome!="chrX" & draw$Chromosome!="chrY"),c("Num.of.Markers","Mean")]
-    d<-density(forDen$Mean,weights=forDen$Num.of.Markers/sum(forDen$Num.of.Markers),na.rm=T,kernel = c("gaussian"),adjust=0.20,n=1024)
+    d<-density(forDen$Mean,weights=forDen$Num.of.Markers/sum(forDen$Num.of.Markers),na.rm=TRUE,kernel = c("gaussian"),adjust=0.20,n=1024)
     
     plot(d$y,d$x,ylim=c(-1,1),type='l',ylab="",xlab="",axes=FALSE,xlim=rev(range(d$y)))
     abline(h = c(0,-cutoff,cutoff), lty = 3)
@@ -710,7 +704,7 @@ PlotCNV<- function(object, select,comment=F,cutoff=0.1,markers=20){
     legend("bottomleft", legend="Density",cex=1)
     
     info<-""
-    if(comment==T){
+    if(comment==TRUE){
       Comment <- object$SL[select[i],"Comment"]
       info<-paste("       Info:: ",Comment)
     }
